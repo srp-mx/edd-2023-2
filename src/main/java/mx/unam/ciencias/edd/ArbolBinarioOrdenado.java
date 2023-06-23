@@ -1,6 +1,7 @@
 package mx.unam.ciencias.edd;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * <p>Clase para árboles binarios ordenados. Los árboles son genéricos, pero
@@ -25,17 +26,20 @@ public class ArbolBinarioOrdenado<T extends Comparable<T>>
 
         /* Inicializa al iterador. */
         private Iterador() {
-            // Aquí va su código.
+            pila = new Pila<Vertice>();
+            meteIzquierdos(raiz, pila);
         }
 
         /* Nos dice si hay un elemento siguiente. */
         @Override public boolean hasNext() {
-            // Aquí va su código.
+            return !pila.esVacia();
         }
 
         /* Regresa el siguiente elemento en orden DFS in-order. */
         @Override public T next() {
-            // Aquí va su código.
+            if (!hasNext())
+                throw new NoSuchElementException("Se nos acabó el árbol.");
+            return siguientePila(pila).elemento;
         }
     }
 
@@ -69,7 +73,68 @@ public class ArbolBinarioOrdenado<T extends Comparable<T>>
      * @param elemento el elemento a agregar.
      */
     @Override public void agrega(T elemento) {
-        // Aquí va su código.
+        if (elemento == null)
+            throw new IllegalArgumentException("No se puede agregar null al árbol.");
+
+        elementos++;
+        if (raiz == null) {
+            raiz = ultimoAgregado = nuevoVertice(elemento);
+            return;
+        }
+
+        auxiliarAgrega(raiz, elemento);
+    }
+
+    /* Método auxiliar para hacer recursión al agregar */
+    private void auxiliarAgrega(Vertice padreAgregado, T elemento) { 
+        if (elemento.compareTo(padreAgregado.elemento) <= 0)
+            if (padreAgregado.izquierdo == null)
+                agregaVerticeIzq(padreAgregado, nuevoVertice(elemento));
+            else
+                auxiliarAgrega(padreAgregado.izquierdo, elemento);
+        else
+            if (padreAgregado.derecho == null)
+                agregaVerticeDer(padreAgregado, nuevoVertice(elemento));
+            else
+                auxiliarAgrega(padreAgregado.derecho, elemento);
+    }
+
+    /* Hace v hijo izquierdo de padre preservando el subárbol de padre bajo v */
+    private void agregaVerticeIzq(Vertice padre, Vertice v) {
+        if (padre.izquierdo != null) {
+            v.izquierdo = padre.izquierdo;
+            padre.izquierdo.padre = v;
+        }
+        v.padre = padre;
+        padre.izquierdo = v;
+        ultimoAgregado = v;
+    }
+
+    /* Hace v hijo derecho de padre preservando el subárbol de padre bajo v */
+    private void agregaVerticeDer(Vertice padre, Vertice v) {
+        if (padre.derecho != null) {
+            v.derecho = padre.derecho;
+            padre.derecho.padre = v;
+        }
+        v.padre = padre;
+        padre.derecho = v;
+        ultimoAgregado = v;
+    }
+
+    /* Da el siguiente elemento de la pila y la avanza. Agrega si necesita. */
+    private Vertice siguientePila(Pila<Vertice> pila) {
+        Vertice v = pila.saca();
+        if (v.derecho != null)
+            meteIzquierdos(v.derecho, pila);
+        return v;
+    }
+    
+    /* Mete al vértice a la pila y todo elemento a su izquierda (si puede) */
+    private void meteIzquierdos(Vertice v, Pila<Vertice> pila) {
+        while (v != null) {
+            pila.mete(v);
+            v = v.izquierdo;
+        }
     }
 
     /**
@@ -79,7 +144,15 @@ public class ArbolBinarioOrdenado<T extends Comparable<T>>
      * @param elemento el elemento a eliminar.
      */
     @Override public void elimina(T elemento) {
-        // Aquí va su código.
+        Vertice aEliminar = (Vertice)busca(elemento);
+        if (aEliminar == null)
+            return;
+
+        if (aEliminar.izquierdo != null && aEliminar.derecho != null)
+            aEliminar = intercambiaEliminable(aEliminar);
+
+        eliminaVertice(aEliminar);
+        elementos--;
     }
 
     /**
@@ -92,7 +165,21 @@ public class ArbolBinarioOrdenado<T extends Comparable<T>>
      *         de <code>null</code>.
      */
     protected Vertice intercambiaEliminable(Vertice vertice) {
-        // Aquí va su código.
+        Vertice infimo = infimo(vertice);
+        vertice.elemento = infimo.elemento;
+        return infimo;
+    }
+
+    /* Obtiene el vértice máximo de los vértices a la izquierda de otro */
+    private Vertice infimo(Vertice v) {
+        Vertice maximo = v.izquierdo;
+        if (maximo == null)
+            return null;
+
+        while (maximo.derecho != null)
+            maximo = maximo.derecho;
+
+        return maximo;
     }
 
     /**
@@ -102,7 +189,48 @@ public class ArbolBinarioOrdenado<T extends Comparable<T>>
      *                distinto de <code>null</code>.
      */
     protected void eliminaVertice(Vertice vertice) {
-        // Aquí va su código.
+        Vertice hijo = vertice.izquierdo;
+        if (hijo == null)
+            hijo = vertice.derecho;
+        cambiaHijo(vertice, hijo);
+    }
+
+    /* Reemplaza a un vértice como el hijo de su padre. Supone hijo no nulo. */
+    private void cambiaHijo(Vertice hijo, Vertice reemplazo) {
+        if (reemplazo != null)
+            reemplazo.padre = hijo.padre;
+
+        if (hijo.padre == null) {
+            raiz = reemplazo;
+            return;
+        }
+
+        if (hijo.padre.izquierdo == hijo)
+            hijo.padre.izquierdo = reemplazo;
+        else
+            hijo.padre.derecho = reemplazo;
+    }
+
+    /* Reemplaza el hijo izquierdo del padre. */
+    private void cambiaHijoIzq(Vertice padre, Vertice reemplazo) {
+        if (reemplazo != null)
+            reemplazo.padre = padre;
+
+        if (padre == null)
+            raiz = reemplazo;
+        else
+            padre.izquierdo = reemplazo;
+    }
+
+    /* Reemplaza el hijo derecho del padre. */
+    private void cambiaHijoDer(Vertice padre, Vertice reemplazo) {
+        if (reemplazo != null)
+            reemplazo.padre = padre;
+
+        if (padre == null)
+            raiz = reemplazo;
+        else
+            padre.derecho = reemplazo;
     }
 
     /**
@@ -113,7 +241,18 @@ public class ArbolBinarioOrdenado<T extends Comparable<T>>
      *         encuentra; <code>null</code> en otro caso.
      */
     @Override public VerticeArbolBinario<T> busca(T elemento) {
-        // Aquí va su código.
+        Vertice v = raiz;
+        int comparacion;
+        while (v != null) {
+            comparacion = elemento.compareTo(v.elemento);
+            if (comparacion == 0)
+                return v;
+            if (comparacion < 0)
+                v = v.izquierdo;
+            else
+                v = v.derecho;
+        }
+        return v;
     }
 
     /**
@@ -137,7 +276,14 @@ public class ArbolBinarioOrdenado<T extends Comparable<T>>
      * @param vertice el vértice sobre el que vamos a girar.
      */
     public void giraDerecha(VerticeArbolBinario<T> vertice) {
-        // Aquí va su código.
+        if (!vertice.hayIzquierdo())
+            return;
+
+        Vertice a = (Vertice)vertice;
+        Vertice b = a.izquierdo;
+        cambiaHijoIzq(a, b.derecho);
+        cambiaHijo(a, b);
+        cambiaHijoDer(b, a);
     }
 
     /**
@@ -146,7 +292,14 @@ public class ArbolBinarioOrdenado<T extends Comparable<T>>
      * @param vertice el vértice sobre el que vamos a girar.
      */
     public void giraIzquierda(VerticeArbolBinario<T> vertice) {
-        // Aquí va su código.
+        if (!vertice.hayDerecho())
+            return;
+
+        Vertice b = (Vertice)vertice;
+        Vertice a = b.derecho;
+        cambiaHijoDer(b, a.izquierdo);
+        cambiaHijo(b, a);
+        cambiaHijoIzq(a, b);
     }
 
     /**
@@ -155,7 +308,18 @@ public class ArbolBinarioOrdenado<T extends Comparable<T>>
      * @param accion la acción a realizar en cada elemento del árbol.
      */
     public void dfsPreOrder(AccionVerticeArbolBinario<T> accion) {
-        // Aquí va su código.
+        auxiliarDfsPreOrder(raiz, accion);
+    }
+
+    /* Método auxiliar para hacer DFS pre-order recursivo */
+    private void 
+    auxiliarDfsPreOrder(Vertice v, AccionVerticeArbolBinario<T> accion) {
+        if (v == null)
+            return;
+
+        accion.actua(v);
+        auxiliarDfsPreOrder(v.izquierdo, accion);
+        auxiliarDfsPreOrder(v.derecho, accion);
     }
 
     /**
@@ -164,7 +328,18 @@ public class ArbolBinarioOrdenado<T extends Comparable<T>>
      * @param accion la acción a realizar en cada elemento del árbol.
      */
     public void dfsInOrder(AccionVerticeArbolBinario<T> accion) {
-        // Aquí va su código.
+        auxiliarDfsInOrder(raiz, accion);
+    }
+
+    /* Método auxiliar para hacer DFS in-order recursivo */
+    private void 
+    auxiliarDfsInOrder(Vertice v, AccionVerticeArbolBinario<T> accion) {
+        if (v == null)
+            return;
+
+        auxiliarDfsInOrder(v.izquierdo, accion);
+        accion.actua(v);
+        auxiliarDfsInOrder(v.derecho, accion);
     }
 
     /**
@@ -173,7 +348,18 @@ public class ArbolBinarioOrdenado<T extends Comparable<T>>
      * @param accion la acción a realizar en cada elemento del árbol.
      */
     public void dfsPostOrder(AccionVerticeArbolBinario<T> accion) {
-        // Aquí va su código.
+        auxiliarDfsPostOrder(raiz, accion);
+    }
+
+    /* Método auxiliar para hacer DFS post-order recursivo */
+    private void 
+    auxiliarDfsPostOrder(Vertice v, AccionVerticeArbolBinario<T> accion) {
+        if (v == null)
+            return;
+
+        auxiliarDfsPostOrder(v.izquierdo, accion);
+        auxiliarDfsPostOrder(v.derecho, accion);
+        accion.actua(v);
     }
 
     /**

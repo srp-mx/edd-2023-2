@@ -1,5 +1,7 @@
 package mx.unam.ciencias.edd;
 
+import java.lang.StringBuilder;
+
 /**
  * Clase para pilas genéricas.
  */
@@ -10,7 +12,12 @@ public class Pila<T> extends MeteSaca<T> {
      * @return una representación en cadena de la pila.
      */
     @Override public String toString() {
-        // Aquí va su código.
+        StringBuilder sb = new StringBuilder();
+        for (Nodo n = cabeza; n != null; n = n.siguiente) {
+            sb.append(n.elemento.toString());
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 
     /**
@@ -20,6 +27,13 @@ public class Pila<T> extends MeteSaca<T> {
      *         <code>null</code>.
      */
     @Override public void mete(T elemento) {
-        // Aquí va su código.
+        if (elemento == null)
+            throw new IllegalArgumentException("No se puede meter null a la pila.");
+
+        Nodo n = new Nodo(elemento);
+        n.siguiente = cabeza;
+        cabeza = n;
+        if (rabo == null)
+            rabo = cabeza;
     }
 }

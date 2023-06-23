@@ -11,14 +11,50 @@ public class Arreglos {
     private Arreglos() {}
 
     /**
-     * Ordena el arreglo recibido usando QickSort.
+     * Ordena el arreglo recibido usando QuickSort.
      * @param <T> tipo del que puede ser el arreglo.
      * @param arreglo el arreglo a ordenar.
      * @param comparador el comparador para ordenar el arreglo.
      */
     public static <T> void
     quickSort(T[] arreglo, Comparator<T> comparador) {
-        // Aquí va su código.
+        auxiliarQuickSort(arreglo, comparador, 0, arreglo.length - 1);
+    }
+
+    /**
+     * Ordena el subarreglo recibido usando QuickSort.
+     * @param <T> tipo del que puede ser el arreglo.
+     * @param arreglo el arreglo a ordenar.
+     * @param comparador el comparador para ordenar el arreglo.
+     * @param ini el indice (inclusivo) del inicio del subarreglo.
+     * @param fin el indice (exclusivo) del fin del subarreglo.
+     */
+    private static <T> void
+    auxiliarQuickSort(T[] arreglo, Comparator<T> comparador, int ini, int fin) {
+        if (fin <= ini)
+            return;
+
+        int i = ini + 1;
+        int j = fin;
+
+        while (i < j) {
+            T pivote = arreglo[ini];
+            int compI = comparador.compare(arreglo[i], pivote);
+            int compJ = comparador.compare(arreglo[j], pivote);
+            if (compI > 0 && compJ < 0)
+                intercambia(arreglo, i++, j--);
+            else if (compI <= 0)
+                i++;
+            else
+                j--;
+        }
+
+        if (comparador.compare(arreglo[i], arreglo[ini]) > 0)
+            i--;
+
+        intercambia(arreglo, ini, i);
+        auxiliarQuickSort(arreglo, comparador, ini, i - 1);
+        auxiliarQuickSort(arreglo, comparador, i+1, fin);
     }
 
     /**
@@ -39,7 +75,22 @@ public class Arreglos {
      */
     public static <T> void
     selectionSort(T[] arreglo, Comparator<T> comparador) {
-        // Aquí va su código.
+        for (int i = 0; i < arreglo.length; i++) {
+            int indiceMin = i;
+            for (int j = i+1; j < arreglo.length; j++) {
+                if (comparador.compare(arreglo[j], arreglo[indiceMin]) <= 0)
+                    indiceMin = j;
+            }
+            intercambia(arreglo, i, indiceMin);
+        }
+    }
+
+    /* Intercambia dos entradas de un arreglo */
+    private static <T> void
+    intercambia(T[] arreglo, int i, int j) {
+        T temp = arreglo[i];
+        arreglo[i] = arreglo[j];
+        arreglo[j] = temp;
     }
 
     /**
@@ -63,7 +114,20 @@ public class Arreglos {
      */
     public static <T> int
     busquedaBinaria(T[] arreglo, T elemento, Comparator<T> comparador) {
-        // Aquí va su código.
+        int ini = 0;
+        int fin = arreglo.length - 1;
+        
+        while (fin - ini >= 0) {
+            int pm = ini + (fin-ini)/2;
+            int comparacion = comparador.compare(arreglo[pm], elemento);
+            if (comparacion == 0)
+                return pm;
+            else if (comparacion > 0)
+                fin = pm - 1;
+            else
+                ini = pm + 1;
+        }
+        return -1;
     }
 
     /**
