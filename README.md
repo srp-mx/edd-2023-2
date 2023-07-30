@@ -33,6 +33,11 @@ Prácticas de laboratorio
     * Trayectoria mínima
     * Dijkstra
 
+Adiciones
+---------
+
+* Caché LRU (Usado Menos Recientemente)
+
 ### Uso
 
 Compilar:
